@@ -1,0 +1,16 @@
+active_provider: ollama
+providers:
+  ollama:
+    enabled: true
+    model: llama3.1
+    host: http://host.docker.internal:11434
+
+extensions:
+  golf_canada:
+    enabled: true
+    type: stdio
+    cmd: python3
+    args:
+      - /workspace/scripts/golf_canada_mcp.py
+    envs:
+      GOLF_CANADA_TOKEN: YOUR_API_TOKEN_HERE
