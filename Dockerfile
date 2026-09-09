@@ -21,7 +21,7 @@ RUN curl -fsSL https://github.com/block/goose/releases/download/stable/download_
 ENV PATH="/root/.local/bin:${PATH}"
 
 WORKDIR /workspace
-EXPOSE 8501
+EXPOSE 8080
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

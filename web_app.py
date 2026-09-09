@@ -37,7 +37,7 @@ run_all = st.sidebar.button("🚀 Audit Selected File", use_container_width=True
 
 st.title("Golf Score & Handicap Audit Center")
 st.caption(
-    "Cross-reference local scorecards, PDFs, and spreadsheets against Golf Canada API records."
+    "Cross-reference local ClubLink round reports against Golf Canada API records."
 )
 
 if not selected_file or selected_file == "No files found":
@@ -51,9 +51,9 @@ if run_all:
     with st.status(f"Goose is analyzing {selected_file}...", expanded=True) as status:
         st.write("📄 Extracting text and scoring data from document...")
         prompt = (
-            f"Read `/workspace/reports/{selected_file}`. Extract all round dates, scores, slope/rating, "
-            f"and player IDs. Then query the Golf Canada MCP tools to verify if these rounds exist "
-            f"and if the scores match. Output a structured comparison."
+            f"Read `/workspace/reports/{selected_file}`. Extract scheduled rounds and dates for ClubLink courses. "
+            f"Then query Golf Canada MCP tools and compare the latest 20 rounds for the same individual IDs. "
+            f"Flag missing, extra, and date/course mismatches in a structured comparison."
         )
 
         result = subprocess.run(
