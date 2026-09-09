@@ -1,0 +1,46 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests pytest
+
+      - name: Run unit tests
+        run: pytest tests/ -v
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'pull_request' &&
+      secrets.GOLFCANADA_USERNAME != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests pytest
+
+      - name: Run integration tests
+        env:
+          GOLFCANADA_USERNAME: ${{ secrets.GOLFCANADA_USERNAME }}
+          GOLFCANADA_PASSWORD: ${{ secrets.GOLFCANADA_PASSWORD }}
+        run: pytest tests/ -v -m "not integration or integration"
