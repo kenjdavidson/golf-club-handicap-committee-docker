@@ -7,6 +7,15 @@ on:
         description: "Branch to release from"
         required: true
         default: "main"
+      bump_type:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   release:
@@ -28,19 +37,24 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install bump-my-version
+        run: pip install bump-my-version
+
+      - name: Bump version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          bump-my-version bump ${{ github.event.inputs.bump_type }}
+
       - name: Extract version
         id: version
         run: |
-          VERSION=$(python3 -c "import re; content=open('web_app.py').read(); m=re.search(r'^__version__\s*=\s*[\"\'](.*?)[\"\']', content, re.M); print(m.group(1))")
+          VERSION=$(python3 -c "import tomllib; d=tomllib.load(open('pyproject.toml','rb')); print(d['project']['version'])")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Check tag does not already exist
-        run: |
-          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.version.outputs.tag }} already exists. Bump __version__ in web_app.py before releasing." >&2
-            exit 1
-          fi
+      - name: Push version bump commit
+        run: git push origin HEAD:${{ github.event.inputs.branch }}
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -63,8 +77,6 @@ jobs:
 
       - name: Create and push tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
