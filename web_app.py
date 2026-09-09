@@ -1,8 +1,12 @@
 import os
 import re
 import subprocess
+import sys
 
 import streamlit as st
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "scripts"))
+from golf_canada_client import GolfCanadaClient, GolfCanadaAuthError  # noqa: E402
 
 st.set_page_config(
     page_title="Golf Canada Verification Hub",
@@ -13,7 +17,52 @@ st.set_page_config(
 
 REPORTS_DIR = "/workspace/reports"
 
+# ------------------------------------------------------------------
+# Authentication gate
+# ------------------------------------------------------------------
+# Prefer a pre-configured token from the environment; otherwise show a
+# login form so the user can authenticate with username and password.
+
+if "gc_client" not in st.session_state:
+    env_token = os.getenv("GOLF_CANADA_TOKEN", "")
+    if env_token:
+        st.session_state["gc_client"] = GolfCanadaClient(token=env_token)
+    else:
+        st.session_state["gc_client"] = None
+
+if st.session_state["gc_client"] is None:
+    st.title("⛳ Golf Canada — Sign In")
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Sign In")
+
+    if submitted:
+        if not username or not password:
+            st.error("Please enter both username and password.")
+        else:
+            with st.spinner("Signing in…"):
+                try:
+                    client = GolfCanadaClient()
+                    gc_token = client.login(username, password)
+                    st.session_state["gc_client"] = client
+                    st.session_state["gc_user"] = gc_token.user
+                    st.rerun()
+                except GolfCanadaAuthError as exc:
+                    st.error(f"Authentication failed: {exc}")
+    st.stop()
+
 st.sidebar.title("⛳ Golf Canada Engine")
+st.sidebar.markdown("---")
+
+gc_user = st.session_state.get("gc_user", {})
+if gc_user:
+    st.sidebar.markdown(f"👤 **{gc_user.get('fullName', gc_user.get('username', 'Signed in'))}**")
+if st.sidebar.button("Sign Out"):
+    st.session_state["gc_client"] = None
+    st.session_state.pop("gc_user", None)
+    st.rerun()
+
 st.sidebar.markdown("---")
 col_s1, col_s2 = st.sidebar.columns(2)
 col_s1.metric("Engine", "Goose CLI", delta="Ready")
