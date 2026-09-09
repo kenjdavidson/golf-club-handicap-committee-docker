@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'pull_request' &&
-      vars.RUN_INTEGRATION_TESTS == 'true'
+      secrets.GOLFCANADA_USERNAME != ''
     steps:
       - uses: actions/checkout@v4
 
